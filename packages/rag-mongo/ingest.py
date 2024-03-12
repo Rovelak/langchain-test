@@ -1,7 +1,7 @@
 import os
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader
+#from langchain_community.document_loaders import PyPDFLoader
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import MongoDBAtlasVectorSearch
 from pymongo import MongoClient
@@ -17,18 +17,36 @@ client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 MONGODB_COLLECTION = db[COLLECTION_NAME]
 # PDF file to split location
-FILE_URI = "https://www.ladocumentationjuridique.com/_downloads/2d8ed631a36b36f7c69562b69b4cbccb" 
+FILE_URI = "/home/rovelak/Documents/claims" 
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 10
 
+def load_text_file(file_path):
+    with open(file_path, 'r') as file:
+        return file.read()
+
+def split_text_into_chunks(text, chunk_size, chunk_overlap):
+    chunks = []
+    start = 0
+    end = chunk_size
+    while start < len(text):
+        # Extract the chunk
+        chunks.append(text[start:end])
+        # Move start and end forward, considering the overlap
+        start = end - chunk_overlap
+        end = start + chunk_size
+        if end > len(text):
+            # Ensure the last chunk extends to the end of the text
+            end = len(text)
+    
+    return chunks
+
 if __name__ == "__main__":
     # Load docs
-    loader = PyPDFLoader(FILE_URI)
-    data = loader.load()
+    data  = load_text_file(FILE_URI)
 
     # Split docs
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
-    docs = text_splitter.split_documents(data)
+    docs = split_text_into_chunks(data, CHUNK_SIZE, CHUNK_OVERLAP)
 
     # Insert the documents in MongoDB Atlas Vector Search
     _ = MongoDBAtlasVectorSearch.from_documents(
