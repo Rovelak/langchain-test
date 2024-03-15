@@ -25,7 +25,7 @@ DB_NAME = "langchain-test-2"
 COLLECTION_NAME = "test"
 ATLAS_VECTOR_SEARCH_INDEX_NAME = "vector_index"
 
-SEARCH_K_VALUE = 100
+SEARCH_K_VALUE = 50
 POST_FILTER_PIPELINE_LIMIT = 5
 OPENAI_MODEL_NAME = "gpt-3.5-turbo-16k-0613"
 
@@ -40,14 +40,22 @@ vectorstore = MongoDBAtlasVectorSearch.from_connection_string(
     OpenAIEmbeddings(disallowed_special=()),
     index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME,
 )
+
+#retriever = vectorstore.as_retriever(search_type="mmr")
+
+# retriever = vectorstore.as_retriever(
+#   search_type="similarity_score_threshold", search_kwargs={"score_threshold": -0.2, 
+#   "post_filter_pipeline": [{"$project": { "_id": 0}}]}
+# )
 retriever = vectorstore.as_retriever(
   search_type="similarity", search_kwargs={"k": SEARCH_K_VALUE, 
-  "post_filter_pipeline": [{"$limit": POST_FILTER_PIPELINE_LIMIT}, {"$project": { "_id": 0}}]}
+  "post_filter_pipeline": [{"$project": { "_id": 0}}]}
 )
 
 # RAG prompt
 template = """Answer the question based only on the following context:
 {context}
+More context: one full day is 7h of work, corresponding to a 100 percent claim
 Question: {question}
 """
 prompt = ChatPromptTemplate.from_template(template)
@@ -69,24 +77,3 @@ class Question(BaseModel):
 
 
 chain = chain.with_types(input_type=Question)
-
-
-def _ingest(url: str) -> dict:
-    loader = PyPDFLoader(url)
-    data = loader.load()
-
-    # Split docs
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
-    docs = text_splitter.split_documents(data)
-
-    # Insert the documents in MongoDB Atlas Vector Search
-    _ = MongoDBAtlasVectorSearch.from_documents(
-        documents=docs,
-        embedding=OpenAIEmbeddings(disallowed_special=()),
-        collection=MONGODB_COLLECTION,
-        index_name=ATLAS_VECTOR_SEARCH_INDEX_NAME,
-    )
-    return {}
-
-
-ingest = RunnableLambda(_ingest)
