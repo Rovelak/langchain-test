@@ -17,7 +17,7 @@ client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 MONGODB_COLLECTION = db[COLLECTION_NAME]
 # PDF file to split location
-FILE_URI = "https://www.ladocumentationjuridique.com/_downloads/2d8ed631a36b36f7c69562b69b4cbccb" 
+FILE_URI = "./Droit.pdf" 
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 10
 
