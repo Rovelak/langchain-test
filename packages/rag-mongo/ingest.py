@@ -1,6 +1,6 @@
 import os
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import MongoDBAtlasVectorSearch
@@ -18,8 +18,8 @@ db = client[DB_NAME]
 MONGODB_COLLECTION = db[COLLECTION_NAME]
 # PDF file to split location
 FILE_URI = "/home/rovelak/Documents/claims" 
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 10
+CHUNK_SIZE = 100
+CHUNK_OVERLAP = 0
 
 if __name__ == "__main__":
     # Load docs
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     data  = loader.load()
 
     # Split docs
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
+    text_splitter = CharacterTextSplitter(separator="\n", chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
     docs = text_splitter.split_documents(data)
 
     # Insert the documents in MongoDB Atlas Vector Search
